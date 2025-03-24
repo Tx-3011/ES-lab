@@ -1,0 +1,113 @@
+
+LCD
+-----------------------------------------------
+
+#include <LPC17xx.h>
+
+unsigned int count = 0;
+
+int disp[16] = { 
+    0x000003F0, 0x00000060, 0x000005B0, 0x000004F0,  // 0-3
+    0x00000660, 0x000006D0, 0x000007D0, 0x00000070,  // 4-7
+    0x000007F0, 0x000006F0, 0x00000770, 0x000007C0,  // 8-B
+    0x00000390, 0x000005E0, 0x00000790, 0x00000710   // C-F
+};
+
+#define DATAPORT 0x00000FF0  // P0.4 to P0.11 for 7-segment
+#define ALLDISP  0x00001800  // Select all displays
+
+int main(void) {
+    // Configure pins as GPIO
+    LPC_PINCON->PINSEL0 = 0x00000000;
+    LPC_PINCON->PINSEL1 = 0x00000000;
+
+    // Set P0.4-P0.11 as output
+    LPC_GPIO0->FIODIR = DATAPORT | ALLDISP;
+
+    while (1) {
+        LPC_GPIO0->FIOSET = ALLDISP;    // Enable displays
+        LPC_GPIO0->FIOCLR = DATAPORT;   // Clear data lines
+        LPC_GPIO0->FIOSET = disp[count]; // Set new display value
+
+        for (volatile int delay = 0; delay < 30000; delay++); // Small delay
+
+        count++;
+        if (count == 0x10) {  // If all 0-F displayed, reset count
+            count = 0;
+            LPC_GPIO0->FIOCLR = ALLDISP;  // Turn off display
+        }
+    }
+}
+
+
+Buzzer
+-----------------------------------------------
+
+#include<LPC17xx.h>
+int main(void){
+    LPC_PINCON->PINSEL1 = 0X00000000
+    LCC_GPIO0->FIODIR = 0X03000000
+
+    while(1){
+        if(!(LPC_GPIO2->FIOPIN & 0X00000800)){
+            LPC_GPIO0->FIOSET = 0X03000000
+        }else{
+            LPC_GPIO0->FIOCLR=OX03000000
+        }
+    }
+}
+
+
+STEPPER MOTOR
+-----------------------------------------------
+
+#include <LPC17xx.H>
+
+void clock_wise(void);
+void anti_clock_wise(void);
+
+unsigned long int var1, var2;
+unsigned int i = 0, j = 0, k = 0;
+
+int main(void) {
+    LPC_PINCON->PINSEL4 = 0x00000000;
+    LPC_GPIO2->FIODIR = 0x0000000F;
+
+    while (1) {
+        for (j = 0; j < 30; j++) {
+            clock_wise();
+        }
+
+        for (k = 0; k < 50000; k++);
+
+        for (j = 0; j < 30; j++) {
+            anti_clock_wise();
+        }
+
+        for (k = 0; k < 50000; k++);
+    }
+}
+
+void clock_wise(void) {
+    var1 = 0x00000001;
+
+    for (i = 0; i < 3; i++) {
+        LPC_GPIO2->FIOCLR = 0x0000000F;
+        LPC_GPIO2->FIOSET = var1;
+        var1 = var1 << 1;
+
+        for (k = 0; k < 15000; k++);
+    }
+}
+
+void anti_clock_wise(void) {
+    var1 = 0x00000008;
+
+    for (i = 0; i < 3; i++) {
+        LPC_GPIO2->FIOCLR = 0x0000000F;
+        LPC_GPIO2->FIOSET = var1;
+        var1 = var1 >> 1;
+
+        for (k = 0; k < 15000; k++);
+    }
+}
